@@ -1,0 +1,23 @@
+{
+  "folders": [
+    { "path": "backend", "name": "Backend (ABP)" },
+    { "path": "frontend", "name": "Frontend (Vue3)" }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/node_modules": true
+    },
+    "csharp.semanticHighlighting.enabled": true,
+    "editor.formatOnSave": true
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-dotnettools.csharp",
+      "vue.volar",
+      "github.copilot",
+      "github.copilot-chat"
+    ]
+  }
+}

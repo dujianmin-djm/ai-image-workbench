@@ -1,0 +1,113 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "5.1.0",
+      "isInstalled": true,
+      "creationTime": "04/01/2026 09:22:23 +00:00"
+    },
+    "Volo.Abp.Account": {
+      "version": "10.1.0",
+      "isInstalled": true,
+      "creationTime": "04/01/2026 09:22:23 +00:00"
+    },
+    "Volo.Abp.OpenIddict": {
+      "version": "10.1.0",
+      "isInstalled": true,
+      "creationTime": "04/01/2026 09:22:23 +00:00"
+    },
+    "Volo.Abp.Identity": {
+      "version": "10.1.0",
+      "isInstalled": true,
+      "creationTime": "04/01/2026 09:22:23 +00:00"
+    },
+    "Volo.Abp.TenantManagement": {
+      "version": "10.1.0",
+      "isInstalled": true,
+      "creationTime": "04/01/2026 09:22:23 +00:00"
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "10.1.0",
+      "isInstalled": true,
+      "creationTime": "04/01/2026 09:22:23 +00:00"
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "10.1.0",
+      "isInstalled": true,
+      "creationTime": "04/01/2026 09:22:23 +00:00"
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "10.1.0",
+      "isInstalled": true,
+      "creationTime": "04/01/2026 09:22:23 +00:00"
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "AI.Image.Application": {
+      "path": "src/AI.Image.Application/AI.Image.Application.abppkg",
+      "folder": "src"
+    },
+    "AI.Image.Application.Tests": {
+      "path": "test/AI.Image.Application.Tests/AI.Image.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "AI.Image.Domain.Shared": {
+      "path": "src/AI.Image.Domain.Shared/AI.Image.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "AI.Image.Application.Contracts": {
+      "path": "src/AI.Image.Application.Contracts/AI.Image.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "AI.Image.HttpApi": {
+      "path": "src/AI.Image.HttpApi/AI.Image.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "AI.Image.HttpApi.Client": {
+      "path": "src/AI.Image.HttpApi.Client/AI.Image.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "AI.Image.Web": {
+      "path": "src/AI.Image.Web/AI.Image.Web.abppkg",
+      "folder": "src"
+    },
+    "AI.Image.Web.Tests": {
+      "path": "test/AI.Image.Web.Tests/AI.Image.Web.Tests.abppkg",
+      "folder": "test"
+    },
+    "AI.Image.EntityFrameworkCore.Tests": {
+      "path": "test/AI.Image.EntityFrameworkCore.Tests/AI.Image.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "AI.Image.EntityFrameworkCore": {
+      "path": "src/AI.Image.EntityFrameworkCore/AI.Image.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "AI.Image.TestBase": {
+      "path": "test/AI.Image.TestBase/AI.Image.TestBase.abppkg",
+      "folder": "test"
+    },
+    "AI.Image.Domain.Tests": {
+      "path": "test/AI.Image.Domain.Tests/AI.Image.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "AI.Image.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/AI.Image.HttpApi.Client.ConsoleTestApp/AI.Image.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "AI.Image.DbMigrator": {
+      "path": "src/AI.Image.DbMigrator/AI.Image.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "AI.Image.Domain": {
+      "path": "src/AI.Image.Domain/AI.Image.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}

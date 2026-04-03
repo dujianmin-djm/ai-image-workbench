@@ -1,0 +1,12 @@
+<Solution>
+    <Folder Name="/src/">
+        <Project Path="src/AI.Image.Application.Contracts/AI.Image.Application.Contracts.csproj" />
+        <Project Path="src/AI.Image.Application/AI.Image.Application.csproj" />
+        <Project Path="src/AI.Image.DbMigrator/AI.Image.DbMigrator.csproj" />
+        <Project Path="src/AI.Image.Domain.Shared/AI.Image.Domain.Shared.csproj" />
+        <Project Path="src/AI.Image.Domain/AI.Image.Domain.csproj" />
+        <Project Path="src/AI.Image.EntityFrameworkCore/AI.Image.EntityFrameworkCore.csproj" />
+        <Project Path="src/AI.Image.HttpApi.Host/AI.Image.HttpApi.Host.csproj" />
+        <Project Path="src/AI.Image.HttpApi/AI.Image.HttpApi.csproj" />
+    </Folder>
+</Solution>

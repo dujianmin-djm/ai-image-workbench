@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AI.Image</RootNamespace>
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Logs\**" />
+    <Content Remove="Logs\**" />
+    <EmbeddedResource Remove="Logs\**" />
+    <None Remove="Logs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="C:\Users\肚肚\.nuget\packages\volo.abp.aspnetcore.serilog\10.2.0\contentFiles\any\net10.0\Volo.Abp.AspNetCore.Serilog.abppkg.analyze.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Image.db-shm" />
+    <None Remove="Image.db-wal" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Image.db" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DistributedLock.FileSystem" Version="1.0.3" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="10.2.0" />
+    <PackageReference Include="Volo.Abp.Autofac" Version="10.2.0" />
+    <PackageReference Include="Volo.Abp.DistributedLocking" Version="10.2.0" />
+    <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AI.Image.Application\AI.Image.Application.csproj" />
+    <ProjectReference Include="..\AI.Image.EntityFrameworkCore\AI.Image.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\AI.Image.HttpApi\AI.Image.HttpApi.csproj" />
+  </ItemGroup>
+
+</Project>
