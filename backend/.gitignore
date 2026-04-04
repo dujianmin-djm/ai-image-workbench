@@ -270,3 +270,4 @@ tempkey.jwk
 Image.db
 Image.db-shm
 Image.db-wal
+src/AI.Image.HttpApi.Host/wwwroot/*

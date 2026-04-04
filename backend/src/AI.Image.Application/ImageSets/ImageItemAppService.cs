@@ -8,6 +8,7 @@ using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -51,7 +52,12 @@ public class ImageItemAppService : AppService, IImageItemAppService
         if (input.Status.HasValue)
             queryable = queryable.Where(x => x.Status == input.Status.Value);
         if (input.MinRating.HasValue)
-            queryable = queryable.Where(x => x.Rating >= input.MinRating.Value);
+        {
+            if (input.MinRating.Value == -1)
+                queryable = queryable.Where(x => x.Rating == 0); // 无星级
+            else
+                queryable = queryable.Where(x => x.Rating >= input.MinRating.Value);
+        }
         if (!string.IsNullOrWhiteSpace(input.Tag))
             queryable = queryable.Where(x => x.TagsJson != null && x.TagsJson.Contains(input.Tag));
 
@@ -140,13 +146,13 @@ public class ImageItemAppService : AppService, IImageItemAppService
             await _imageRepo.InsertAsync(entity);
             result.Add(ObjectMapper.Map<ImageItem, ImageItemDto>(entity));
         }
-		if (CurrentUnitOfWork != null)
-		{
-			await CurrentUnitOfWork.SaveChangesAsync();
-		}
+        if (CurrentUnitOfWork != null)
+        {
+            await CurrentUnitOfWork.SaveChangesAsync();
+        }
 
-		// 更新项目封面与计数
-		project.ImageCount = await AsyncExecuter.CountAsync(
+        // 更新项目封面与计数
+        project.ImageCount = await AsyncExecuter.CountAsync(
             (await _imageRepo.GetQueryableAsync()).Where(x => x.ProjectId == projectId));
         if (project.CoverPath == null && result.Count > 0)
             project.CoverPath = result[0].ThumbnailPath ?? result[0].FilePath;
@@ -173,24 +179,65 @@ public class ImageItemAppService : AppService, IImageItemAppService
         var item = await _imageRepo.GetAsync(id);
         DeletePhysicalFiles(item);
         await _imageRepo.DeleteAsync(item);
-		if (CurrentUnitOfWork != null)
-		{
-			await CurrentUnitOfWork.SaveChangesAsync();
-		}
+        if (CurrentUnitOfWork != null)
+        {
+            await CurrentUnitOfWork.SaveChangesAsync();
+        }
 
-		// 更新项目封面与计数
-		var project = await _projectRepo.FindAsync(item.ProjectId);
+        // 更新项目封面与计数
+        var project = await _projectRepo.FindAsync(item.ProjectId);
         if (project != null)
         {
             project.ImageCount = Math.Max(0, project.ImageCount - 1);
             if (project.CoverPath?.Equals(item.ThumbnailPath) == true)
             {
-				var imageItem = (await _imageRepo.GetQueryableAsync())
-			        .Where(x => x.ProjectId == project.Id).FirstOrDefault();
+                var imageItem = (await _imageRepo.GetQueryableAsync())
+                    .Where(x => x.ProjectId == project.Id).FirstOrDefault();
                 project.CoverPath = imageItem?.ThumbnailPath;
-			}
-			await _projectRepo.UpdateAsync(project);
+            }
+            await _projectRepo.UpdateAsync(project);
         }
+    }
+
+    /// <summary>
+    /// 导出指定图片为 zip（按 id 列表）
+    /// </summary>
+    [HttpPost("export")]
+    public async Task<IActionResult> ExportAsync([FromBody] ImageExportInput input)
+    {
+        var ids = input.Ids ?? [];
+        List<ImageItem> items;
+        if (ids.Count > 0)
+        {
+            items = await _imageRepo.GetListAsync(x => ids.Contains(x.Id));
+        }
+        else if (input.ProjectId.HasValue)
+        {
+            items = await _imageRepo.GetListAsync(x => x.ProjectId == input.ProjectId.Value);
+        }
+        else
+        {
+            return new BadRequestObjectResult("请指定导出的图片 ID 或项目 ID");
+        }
+
+        var memoryStream = new MemoryStream();
+        using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+        {
+            foreach (var item in items)
+            {
+                var filePath = Path.Combine(_env.ContentRootPath, "wwwroot", item.FilePath.Replace('/', Path.DirectorySeparatorChar));
+                if (!File.Exists(filePath)) continue;
+                var entry = archive.CreateEntry(item.FileName, CompressionLevel.Fastest);
+                using var entryStream = entry.Open();
+                using var fileStream = File.OpenRead(filePath);
+                await fileStream.CopyToAsync(entryStream);
+            }
+        }
+        memoryStream.Position = 0;
+        return new FileStreamResult(memoryStream, "application/zip")
+        {
+            FileDownloadName = $"export_{DateTime.Now:yyyyMMdd_HHmmss}.zip"
+        };
     }
 
     [HttpDelete("deleteByProject/{projectId}")]

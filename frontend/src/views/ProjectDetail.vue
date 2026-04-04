@@ -14,10 +14,16 @@ const imageStore = useImageStore()
 const projectId = computed(() => route.params.id as string)
 const thumbnailSize = ref(180)
 const filterStatus = ref<ReviewStatus | ''>('')
-const filterMinRating = ref(0)
+const filterMinRating = ref<number | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
-// 对比选择（最多2张）
-const selectedForCompare = ref<string[]>([])
+// 统一选择集（用于导出和对比）
+const selectedForExport = ref<Set<string>>(new Set())
+// 全选标志
+const isAllSelected = ref(false)
+
+// 项目是否真正有图片（不受过滤影响）
+const projectHasImages = computed(() => (projectStore.current?.imageCount ?? 0) > 0)
 
 onMounted(async () => {
   await projectStore.fetchOne(projectId.value)
@@ -29,18 +35,34 @@ watch([filterStatus, filterMinRating], () => loadImages())
 async function loadImages() {
   await imageStore.fetchList(projectId.value, {
     status: filterStatus.value === '' ? undefined : filterStatus.value,
-    minRating: filterMinRating.value || undefined,
+    minRating: filterMinRating.value ?? undefined,
   })
+  // 重置选择
+  isAllSelected.value = false
+  selectedForExport.value = new Set()
 }
 
+// 星级过滤选项
+const ratingOptions = [
+  { label: '全部', value: '' },
+  { label: '≥1星', value: 1 },
+  { label: '≥2星', value: 2 },
+  { label: '≥3星', value: 3 },
+  { label: '≥4星', value: 4 },
+  { label: '5星', value: 5 },
+  { label: '无星级', value: -1 },
+]
+
 // 上传处理
+function triggerUpload() {
+  fileInputRef.value?.click()
+}
 async function handleFileSelect(event: Event) {
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
   const files = Array.from(input.files)
   await imageStore.upload(projectId.value, files)
   input.value = ''
-  // 刷新项目信息
   await projectStore.fetchOne(projectId.value)
 }
 
@@ -72,24 +94,100 @@ function openDetail(img: ImageItemDto) {
   router.push(`/image/${img.id}`)
 }
 
-// 对比选择
-function toggleCompare(id: string) {
-  if (selectedForCompare.value.includes(id)) {
-    selectedForCompare.value = selectedForCompare.value.filter((x) => x !== id)
-  } else if (selectedForCompare.value.length < 2) {
-    selectedForCompare.value = [...selectedForCompare.value, id]
+// 统一选择/取消图片（导出/对比共用）
+function toggleSelect(id: string) {
+  const s = new Set(selectedForExport.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  selectedForExport.value = s
+  isAllSelected.value = s.size === imageStore.images.length && s.size > 0
+}
+
+// 全选 / 取消全选
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    selectedForExport.value = new Set()
+    isAllSelected.value = false
   } else {
-    ElMessage.warning('最多同时选择 2 张进行对比')
+    selectedForExport.value = new Set(imageStore.images.map(x => x.id))
+    isAllSelected.value = true
   }
 }
 
+// 清空所有选择
+function clearSelection() {
+  selectedForExport.value = new Set()
+  isAllSelected.value = false
+}
+
+// 对比：必须恰好选择2张
 function goCompare() {
-  router.push({ path: `/projects/${projectId.value}/compare`, query: { ids: selectedForCompare.value.join(',') } })
+  const ids = Array.from(selectedForExport.value)
+  if (ids.length !== 2) {
+    ElMessage.warning('请选择 2 张图片进行对比')
+    return
+  }
+  router.push({ path: `/projects/${projectId.value}/compare`, query: { ids: ids.join(',') } })
+}
+
+// 导出已选
+const exporting = ref(false)
+async function exportSelected() {
+  const ids = Array.from(selectedForExport.value)
+  if (!ids.length) return ElMessage.warning('请先选择要导出的图片')
+  exporting.value = true
+  try {
+    const res = await fetch('/dapi/image/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    })
+    if (!res.ok) throw new Error('导出失败')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `export_${Date.now()}.zip`
+    a.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (e: any) {
+    ElMessage.error(e.message || '导出失败')
+  } finally {
+    exporting.value = false
+  }
+}
+
+// 导出项目全部图片（忽略当前选择）
+async function exportAll() {
+  exporting.value = true
+  try {
+    const res = await fetch('/dapi/image/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId: projectId.value }),
+    })
+    if (!res.ok) throw new Error('导出失败')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `export_all_${Date.now()}.zip`
+    a.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success('全部导出成功')
+  } catch (e: any) {
+    ElMessage.error(e.message || '导出失败')
+  } finally {
+    exporting.value = false
+  }
 }
 
 async function confirmDelete(img: ImageItemDto) {
   await ElMessageBox.confirm(`确认删除"${img.fileName}"？`, '删除', { type: 'warning' })
   await imageStore.deleteImage(img.id)
+  // 删除后刷新列表并清理选择
+  await loadImages()
 }
 
 function imgUrl(img: ImageItemDto) {
@@ -124,23 +222,36 @@ function formatSize(bytes: number) {
         <span class="count-badge">{{ imageStore.total }} 张</span>
       </div>
       <div class="header-actions">
-        <el-button
-          v-if="selectedForCompare.length === 2"
-          type="primary"
-          @click="goCompare"
-        >
-          <el-icon><View /></el-icon>对比 ({{ selectedForCompare.length }})
+        <!-- 对比按钮 -->
+        <el-button v-if="selectedForExport.size === 2" type="primary" @click="goCompare">
+          <el-icon><View /></el-icon>对比
         </el-button>
-        <el-button @click="selectedForCompare = []" v-if="selectedForCompare.length">取消选择</el-button>
+        <el-button @click="clearSelection" v-if="selectedForExport.size">取消选择</el-button>
+
+        <!-- 导出下拉菜单 -->
+        <el-dropdown v-if="imageStore.images.length > 0" trigger="click">
+          <el-button :loading="exporting">
+            <el-icon><Download /></el-icon>导出
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="toggleSelectAll">
+                {{ isAllSelected ? '取消全选' : '全选当前图片' }}
+              </el-dropdown-item>
+              <el-dropdown-item @click="exportSelected" :disabled="selectedForExport.size === 0">
+                导出已选 ({{ selectedForExport.size }})
+              </el-dropdown-item>
+              <el-dropdown-item @click="exportAll">导出项目全部图片</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
 
         <!-- 上传按钮 -->
-        <label class="upload-btn">
-          <el-button type="primary" :loading="imageStore.uploading">
-            <el-icon><Upload /></el-icon>
-            {{ imageStore.uploading ? '上传中...' : '导入图片' }}
-          </el-button>
-          <input type="file" multiple accept="image/*" @change="handleFileSelect" style="display:none" />
-        </label>
+        <input ref="fileInputRef" type="file" multiple accept="image/*" @change="handleFileSelect" style="display:none" />
+        <el-button type="primary" :loading="imageStore.uploading" @click="triggerUpload">
+          <el-icon><Upload /></el-icon>
+          {{ imageStore.uploading ? '上传中...' : '导入图片' }}
+        </el-button>
       </div>
     </div>
 
@@ -156,8 +267,15 @@ function formatSize(bytes: number) {
         </el-radio-group>
       </div>
       <div class="filter-group">
-        <span class="filter-label">最低星级：</span>
-        <el-rate v-model="filterMinRating" :max="5" size="small" />
+        <span class="filter-label">星级：</span>
+        <el-select v-model="filterMinRating" size="small" style="width: 110px" placeholder="全部">
+          <el-option
+            v-for="opt in ratingOptions"
+            :key="String(opt.value)"
+            :label="opt.label"
+            :value="opt.value"
+          />
+        </el-select>
       </div>
       <div class="filter-group" style="margin-left:auto">
         <span class="filter-label">缩略图大小：</span>
@@ -165,9 +283,9 @@ function formatSize(bytes: number) {
       </div>
     </div>
 
-    <!-- 拖拽区提示 -->
+    <!-- 拖拽区提示：仅在项目完全无图片时显示 -->
     <div
-      v-if="imageStore.images.length === 0 && !imageStore.loading"
+      v-if="!projectHasImages && !imageStore.loading"
       class="drop-zone"
       :class="{ active: isDragging }"
       @dragover="onDragOver"
@@ -178,29 +296,34 @@ function formatSize(bytes: number) {
       <p>拖拽图片到此处上传，或点击「导入图片」</p>
     </div>
 
+    <!-- 过滤无结果提示 -->
+    <el-empty
+      v-if="projectHasImages && imageStore.images.length === 0 && !imageStore.loading"
+      description="当前过滤条件下无图片"
+    />
+
     <!-- 图片网格 -->
     <div
       v-if="imageStore.images.length > 0"
       class="image-grid"
       :style="{ '--thumb-size': thumbnailSize + 'px' }"
-      @dragover="onDragOver"
-      @dragleave="onDragLeave"
-      @drop="onDrop"
     >
       <div
         v-for="img in imageStore.images"
         :key="img.id"
         class="image-card"
         :class="{
-          selected: selectedForCompare.includes(img.id),
+          'export-selected': selectedForExport.has(img.id),
           'status-selected': img.status === 1,
           'status-rejected': img.status === 2,
         }"
       >
-        <!-- 选框 -->
-        <div class="select-check" @click.stop="toggleCompare(img.id)">
-          <el-icon v-if="selectedForCompare.includes(img.id)" style="color:blue"><Select /></el-icon>
-          <el-icon v-else><Circle /></el-icon>
+        <!-- 左上角统一选择圆圈 -->
+        <div class="select-check" @click.stop="toggleSelect(img.id)">
+          <el-icon v-if="selectedForExport.has(img.id)" style="color: #409eff"><Select /></el-icon>
+          <el-icon v-else>
+            <!-- <CirclePlus /> -->
+          </el-icon>
         </div>
 
         <!-- 缩略图 -->
@@ -222,7 +345,7 @@ function formatSize(bytes: number) {
             size="small"
             @change="(v: number) => quickRate(img, v)"
           />
-          <!-- 快捷状态 -->
+          <!-- 快捷状态按钮 -->
           <div class="quick-actions">
             <el-button
               size="small"
@@ -273,7 +396,6 @@ function formatSize(bytes: number) {
   border-radius: 10px;
 }
 .header-actions { display: flex; gap: 8px; align-items: center; }
-.upload-btn { cursor: pointer; }
 
 .filter-bar {
   display: flex;
@@ -321,7 +443,7 @@ function formatSize(bytes: number) {
   border: 2px solid transparent;
 }
 .image-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,.15); }
-.image-card.selected { border-color: #409eff; }
+.image-card.export-selected { border-color: #e6a23c; }
 .image-card.status-selected { border-color: #67c23a; }
 .image-card.status-rejected { opacity: 0.55; }
 
@@ -332,10 +454,20 @@ function formatSize(bytes: number) {
   z-index: 2;
   background: rgba(255,255,255,.8);
   border-radius: 50%;
-  padding: 8px;
-  cursor: pointer;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.select-check:hover {
+  background: rgba(255,255,255,1);
+  transform: scale(1.05);
+}
+.select-check .el-icon {
+  font-size: 20px;
 }
 
 .thumb-wrap {
