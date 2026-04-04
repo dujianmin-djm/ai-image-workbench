@@ -1,125 +1,193 @@
 # AI 图片筛选与评审工作台
 
-基于 ABP Framework + Vue 3 的图片批量筛选与评审管理系统。用于对 AI 生成/设计稿/电商等场景的图片进行统一导入、评分、标注、对比和导出。
+基于 ABP Framework、Vue 3 与 Electron 的图片批量筛选与评审系统，用于支持 AI 生图、设计稿、电商素材等场景中的导入、浏览、评审、对比与导出。
+
+当前项目同时支持两种运行模式：
+
+- Web 开发调试模式：前后端分离运行，适合开发与联调。
+- Windows 桌面版：通过 Electron 封装前端静态资源与本地 .NET 后端，适合演示与单机交付。
+
+## 文档导航
+
+- [DESIGN.md](DESIGN.md)：产品设计文档，包含目标用户、场景分析、交互设计与关键决策记录。
+- [AI_USAGE.md](AI_USAGE.md)：AI 使用说明，说明本项目中 AI 的参与环节与采纳原则。
+- [USER-MANUAL.md](USER-MANUAL.md)：面向最终用户的操作手册。
+- [desktop/README.md](desktop/README.md)：Electron 桌面打包与发布说明。
 
 ## 技术栈
 
-| 层          | 技术                  | 版本   |
-| ----------- | --------------------- | ------ |
-| 后端框架    | ABP Framework         | 10.2.0 |
-| 运行时      | .NET                  | 10     |
-| ORM         | Entity Framework Core | —      |
-| 数据库      | SQLite                | —      |
-| 图片处理    | SixLabors.ImageSharp  | 3.1.12 |
-| 对象映射    | Riok.Mapperly         | —      |
-| 前端框架    | Vue                   | 3.5.30 |
-| 构建工具    | Vite                  | 8.0.1  |
-| UI 组件库   | Element Plus          | 2.13.6 |
-| 状态管理    | Pinia                 | 3.0.4  |
-| 路由        | Vue Router            | 5.0.4  |
-| HTTP 客户端 | Axios                 | 1.14.0 |
+| 层级 | 技术 | 版本 |
+| --- | --- | --- |
+| 后端框架 | ABP Framework | 10.2.0 |
+| 运行时 | .NET | 10 |
+| ORM | Entity Framework Core | 10 |
+| 数据库 | SQLite | 本地单机 |
+| 图片处理 | SixLabors.ImageSharp | 3.1.12 |
+| 对象映射 | Riok.Mapperly | 编译期生成 |
+| 前端框架 | Vue | 3.5.30 |
+| 构建工具 | Vite | 8.0.1 |
+| UI 组件库 | Element Plus | 2.13.6 |
+| 状态管理 | Pinia | 3.0.4 |
+| 路由 | Vue Router | 5.0.4 |
+| 桌面容器 | Electron | 41.1.1 |
+| 打包工具 | electron-builder | 26.8.1 |
 
-## 项目结构
+## 功能概览
 
-```
+- 项目维度管理图片批次。
+- 批量导入图片并自动生成缩略图。
+- 按状态、评分进行筛选。
+- 直接在卡片层进行快捷评分和状态切换。
+- 进入图片详情页做完整评审。
+- 选中两张图片进入对比评审。
+- 勾选当前结果并导出 ZIP。
+- 打包为 Windows 桌面应用。
+
+## 目录结构
+
+```text
 ai-image-workbench/
-├── start.bat                   # 一键启动脚本
-├── stop.bat                    # 停止服务脚本
-├── backend/                    # 后端 (ABP Framework)
-│   ├── src/
-│   │   ├── AI.Image.Domain/              # 领域层：实体、枚举、仓储接口
-│   │   │   ├── ImageSets/ImageItem.cs    # 图片条目聚合根
-│   │   │   └── Books/WorkProject.cs      # 工作项目聚合根
-│   │   ├── AI.Image.Domain.Shared/       # 共享层：枚举、常量
-│   │   │   └── ImageSets/ReviewStatus.cs # 评审状态枚举
-│   │   ├── AI.Image.Application.Contracts/ # 应用契约层：DTO、服务接口
-│   │   │   ├── ImageSets/               # 图片相关 DTO
-│   │   │   └── Services/                # 项目相关 DTO
-│   │   ├── AI.Image.Application/         # 应用层：服务实现
-│   │   │   ├── ImageSets/ImageItemAppService.cs   # 图片服务
-│   │   │   └── WorkProjects/WorkProjectAppService.cs # 项目服务
-│   │   ├── AI.Image.EntityFrameworkCore/ # EF Core：DbContext、迁移
-│   │   ├── AI.Image.HttpApi/            # HTTP API 层
-│   │   └── AI.Image.HttpApi.Host/       # 宿主程序
-│   │       ├── appsettings.json         # 配置（数据库连接串等）
-│   │       └── uploads/                 # 上传文件存储目录
-│   └── common.props
-├── frontend/                   # 前端 (Vue 3 + TypeScript)
-│   ├── src/
-│   │   ├── api/
-│   │   │   ├── request.ts              # Axios 实例与响应拦截
-│   │   │   ├── imageApi.ts             # 图片 API 封装
-│   │   │   └── projectApi.ts           # 项目 API 封装
-│   │   ├── stores/
-│   │   │   ├── imageStore.ts           # 图片 Pinia Store
-│   │   │   └── projectStore.ts         # 项目 Pinia Store
-│   │   ├── router/index.ts             # 路由定义
-│   │   ├── views/
-│   │   │   ├── ProjectList.vue         # 项目列表
-│   │   │   ├── ProjectDetail.vue       # 项目详情/图片网格
-│   │   │   ├── ImageDetail.vue         # 图片详情/评审
-│   │   │   └── Compare.vue            # 对比评审
-│   │   └── layouts/                    # 布局组件
-│   ├── vite.config.ts
-│   └── package.json
+├── backend/                  # ABP 后端
+├── frontend/                 # Vue 前端
+├── desktop/                  # Electron 桌面封装
+├── README.md                 # 项目总览与开发说明
+├── DESIGN.md                 # 产品设计文档
+├── AI_USAGE.md               # AI 使用说明
+├── USER-MANUAL.md            # 用户操作手册
+├── start.bat                 # Web 开发态一键启动
+└── stop.bat                  # Web 开发态停止脚本
 ```
 
-## 环境要求
+## 运行模式
 
-- **.NET 10 SDK**（[下载](https://dotnet.microsoft.com/download)）
-- **Node.js 18+**（[下载](https://nodejs.org/)）
-- npm（随 Node.js 自带）
+| 模式 | 适用场景 | 启动方式 |
+| --- | --- | --- |
+| Web 开发调试 | 代码开发、接口联调、问题排查 | 运行 start.bat 或分别启动 frontend 与 backend |
+| Electron 桌面版 | 演示、目录版测试、安装包交付 | 参考 [desktop/README.md](desktop/README.md) 构建与启动 |
 
 ## 快速开始
 
-### 方式一：一键启动
+### 1. 开发环境要求
 
-双击项目根目录下的 `start.bat`，脚本将自动：
+- .NET 10 SDK。
+- Node.js 18 或更高版本。
+- npm。
 
-1. 检测 .NET SDK 和 Node.js 环境
-2. 安装前端依赖（首次运行）
-3. 还原后端 NuGet 包
-4. 执行数据库迁移
-5. 启动后端服务（`http://localhost:5008`）
-6. 启动前端开发服务（`http://localhost:5007`）
-7. 打开浏览器
+### 2. Web 开发调试
 
-停止服务：运行 `stop.bat`。
+直接双击根目录下的 start.bat，脚本会自动：
 
-### 方式二：手动启动
+1. 检查 Node.js 与 .NET SDK。
+2. 安装前端依赖。
+3. 还原后端依赖。
+4. 更新数据库。
+5. 启动后端服务。
+6. 启动前端开发服务器。
+7. 打开浏览器。
 
-**后端：**
+停止服务可运行 stop.bat。
 
-```bash
-cd backend
-dotnet restore src/AI.Image.HttpApi.Host/AI.Image.HttpApi.Host.csproj
-dotnet ef database update \
-  --project src/AI.Image.EntityFrameworkCore/AI.Image.EntityFrameworkCore.csproj \
-  --startup-project src/AI.Image.HttpApi.Host/AI.Image.HttpApi.Host.csproj
-dotnet run --project src/AI.Image.HttpApi.Host --urls http://localhost:5008
+也可以手动启动：
+
+```powershell
+cd D:\作业\ai-image-workbench\backend
+dotnet restore src\AI.Image.HttpApi.Host\AI.Image.HttpApi.Host.csproj
+dotnet ef database update --project src\AI.Image.EntityFrameworkCore\AI.Image.EntityFrameworkCore.csproj --startup-project src\AI.Image.HttpApi.Host\AI.Image.HttpApi.Host.csproj
+dotnet run --project src\AI.Image.HttpApi.Host --urls http://localhost:5008
 ```
 
-**前端：**
-
-```bash
-cd frontend
+```powershell
+cd D:\作业\ai-image-workbench\frontend
 npm install
 npm run dev
 ```
 
-### 访问地址
+开发态访问地址：
 
-| 服务         | URL                           |
-| ------------ | ----------------------------- |
-| 前端         | http://localhost:5007         |
-| 后端 API     | http://localhost:5008         |
-| Swagger 文档 | http://localhost:5008/swagger |
+- 前端：http://localhost:5007
+- 后端：http://localhost:5008
+- Swagger：http://localhost:5008/swagger
 
-## 数据库
+### 3. 桌面版打包与测试
 
-使用 SQLite，数据库文件 `Image.db` 生成在后端 Host 项目运行目录下。
+桌面版构建流程已整理到 [desktop/README.md](desktop/README.md)，核心步骤如下：
 
-连接字符串（`backend/src/AI.Image.HttpApi.Host/appsettings.json`）：
+1. 构建前端静态资源，并复制到 desktop/frontend-dist。
+2. 发布 .NET 后端到 desktop/backend-dist。
+3. 在 desktop 目录执行 npm start 验证开发态 Electron。
+4. 执行 npm run build:dir 生成目录版并测试。
+5. 执行 npm run build:nsis 生成安装包。
+
+## 桌面端适配说明
+
+由于 Electron 最终加载的是 file 协议下的前端静态资源，当前项目已做以下适配：
+
+- Vite 的 base 设置为 ./。
+- Vue Router 使用 createWebHashHistory。
+- 前端接口访问使用显式环境变量 VITE_API_BASE_URL。
+- 图片静态资源访问使用显式环境变量 VITE_BACKEND_ORIGIN。
+- Electron 主进程在应用启动时自动拉起本地 .NET 后端。
+
+桌面版构建前，建议在前端构建命令前设置：
+
+```powershell
+$env:VITE_API_BASE_URL = "http://127.0.0.1:5008/dapi"
+$env:VITE_BACKEND_ORIGIN = "http://127.0.0.1:5008"
+```
+
+## 核心业务对象
+
+### WorkProject
+
+表示一个图片评审批次，核心字段包括：
+
+- Name：项目名称。
+- Description：项目描述。
+- Template：模板或业务类型。
+- CoverPath：封面图路径。
+- ImageCount：项目下图片数量缓存。
+
+### ImageItem
+
+表示一张被纳入评审流程的图片，核心字段包括：
+
+- FileName、FilePath、ThumbnailPath。
+- Width、Height、FileSize、MimeType。
+- Rating，范围为 0 到 5。
+- Status，支持待评、选中、淘汰。
+- Notes、TagsJson。
+
+## 核心 API 概览
+
+所有接口统一以 /dapi 为前缀。
+
+### 项目接口
+
+- GET /dapi/project/query：分页查询项目。
+- GET /dapi/project/{id}：获取项目详情。
+- POST /dapi/project/add：创建项目。
+- PUT /dapi/project/edit/{id}：编辑项目。
+- DELETE /dapi/project/delete/{id}：删除项目及其图片。
+
+### 图片接口
+
+- GET /dapi/image/query：分页查询图片。
+- GET /dapi/image/{id}：获取图片详情。
+- POST /dapi/image/upload：批量上传图片。
+- PUT /dapi/image/edit/{id}：修改图片评审信息。
+- DELETE /dapi/image/delete/{id}：删除图片。
+- DELETE /dapi/image/deleteByProject/{projectId}：删除项目下全部图片。
+- POST /dapi/image/export：导出 ZIP。
+
+补充说明：
+
+- MinRating 为 -1 时表示筛选未评分图片。
+- 导出接口返回文件流，不走统一 JSON 包装。
+- 上传时会自动生成缩略图。
+
+## 数据与文件存储
+
+当前版本使用 SQLite 作为本地数据库，连接字符串为：
 
 ```json
 {
@@ -129,139 +197,20 @@ npm run dev
 }
 ```
 
-### 执行迁移
-
-```bash
-cd backend
-# 添加新迁移
-dotnet ef migrations add <MigrationName> \
-  --project src/AI.Image.EntityFrameworkCore \
-  --startup-project src/AI.Image.HttpApi.Host
-
-# 更新数据库
-dotnet ef database update \
-  --project src/AI.Image.EntityFrameworkCore \
-  --startup-project src/AI.Image.HttpApi.Host
-```
-
-## 域模型
-
-### ImageItem（图片条目）
-
-| 字段           | 类型         | 说明                                    |
-| -------------- | ------------ | --------------------------------------- |
-| Id             | Guid         | 主键                                    |
-| ProjectId      | Guid         | 所属项目                                |
-| FileName       | string       | 原始文件名                              |
-| FilePath       | string       | 相对存储路径（`uploads/...`）           |
-| ThumbnailPath  | string?      | 缩略图路径（自动生成，320px 宽）        |
-| FileSize       | long         | 文件大小（字节）                        |
-| Width / Height | int          | 图片尺寸（像素）                        |
-| MimeType       | string?      | MIME 类型                               |
-| Rating         | int          | 星级评分（0-5，0=未评）                 |
-| Status         | ReviewStatus | 评审状态：Pending / Selected / Rejected |
-| Notes          | string?      | 评审备注                                |
-| TagsJson       | string?      | 标签（JSON 数组字符串）                 |
-| SortOrder      | int          | 排序序号                                |
-
-### WorkProject（工作项目）
-
-| 字段        | 类型    | 说明                                                          |
-| ----------- | ------- | ------------------------------------------------------------- |
-| Id          | Guid    | 主键                                                          |
-| Name        | string  | 项目名称                                                      |
-| Description | string? | 描述                                                          |
-| Template    | string? | 模板类型（ai-gen / design / ecommerce / other / heart-valve） |
-| CoverPath   | string? | 封面图片路径                                                  |
-| ImageCount  | int     | 图片数量（缓存值，随增删自动更新）                            |
-
-## API 参考
-
-所有 API 以 `/dapi` 为前缀，响应统一包装为：
-
-```json
-{
-  "code": "200",
-  "success": true,
-  "data": { ... },
-  "message": "success"
-}
-```
-
-> 文件流类型的响应（如导出 ZIP）不经过包装，直接返回二进制流。
-
-### 项目接口 `/dapi/project`
-
-| 方法   | 路径           | 说明                         | 参数                                      |
-| ------ | -------------- | ---------------------------- | ----------------------------------------- |
-| GET    | `/{id}`        | 获取项目详情                 | `id`: Guid                                |
-| GET    | `/query`       | 分页查询项目                 | `Current`, `Size`, `Sorts`                |
-| POST   | `/add`         | 创建项目                     | Body: `{ name, description?, template? }` |
-| PUT    | `/edit/{id}`   | 更新项目                     | Body: `{ name, description?, template? }` |
-| DELETE | `/delete/{id}` | 删除项目（级联删除所有图片） | `id`: Guid                                |
-
-### 图片接口 `/dapi/image`
-
-| 方法   | 路径                           | 说明                            | 参数                                                                  |
-| ------ | ------------------------------ | ------------------------------- | --------------------------------------------------------------------- |
-| GET    | `/{id}`                        | 获取图片详情                    | `id`: Guid                                                            |
-| GET    | `/query`                       | 分页查询图片                    | `ProjectId`, `Status`, `MinRating`, `Tag`, `Current`, `Size`, `Sorts` |
-| POST   | `/upload?projectId={id}`       | 上传图片（multipart/form-data） | `files`: 文件列表                                                     |
-| PUT    | `/edit/{id}`                   | 更新图片信息                    | Body: `{ rating?, status?, notes?, tagsJson? }`                       |
-| DELETE | `/delete/{id}`                 | 删除图片                        | `id`: Guid                                                            |
-| DELETE | `/deleteByProject/{projectId}` | 删除项目下所有图片              | `projectId`: Guid                                                     |
-| POST   | `/export`                      | 导出图片为 ZIP                  | Body: `{ ids?: Guid[], projectId?: Guid }`                            |
-
-**查询参数说明：**
-
-- `MinRating`: `-1` 表示筛选未评分图片（Rating == 0），`1-5` 表示最低星级
-- `Status`: `Pending` / `Selected` / `Rejected`
-- `Sorts`: 排序字段，如 `creationTime desc`
-
-**支持的图片格式：** `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.tiff`
-
-上传时自动生成 320px 宽度的缩略图，存储在 `uploads/thumbnails/` 目录。
-
-## 前端路由
-
-| 路径                    | 视图              | 说明                                 |
-| ----------------------- | ----------------- | ------------------------------------ |
-| `/`                     | —                 | 重定向到 `/projects`                 |
-| `/projects`             | ProjectList.vue   | 项目列表                             |
-| `/projects/:id`         | ProjectDetail.vue | 项目详情、图片网格、筛选、上传、导出 |
-| `/projects/:id/compare` | Compare.vue       | 对比评审（双栏）                     |
-| `/image/:id`            | ImageDetail.vue   | 图片详情、快速评审                   |
-
-## 前端 API 请求约定
-
-- Axios 实例基础路径：`/dapi`，超时 30 秒
-- Vite 开发代理：`/dapi` → `http://localhost:5008`
-- 响应拦截器自动解包 `ApiResponse`，业务代码仅处理 `data` 部分
-- 图片文件 URL 直接拼接后端地址：`http://localhost:5008/{filePath}`
-
-## 构建
-
-**前端生产构建：**
-
-```bash
-cd frontend
-npm run build     # 包含 TypeScript 类型检查
-```
-
-产物输出到 `frontend/dist/`。
-
-**后端发布：**
-
-```bash
-cd backend
-dotnet publish src/AI.Image.HttpApi.Host/AI.Image.HttpApi.Host.csproj -c Release -o publish
-```
+开发态下，数据库与上传目录位于后端运行目录。桌面安装版当前仍使用 backend-dist 作为运行工作目录，后续建议迁移到用户可写目录，例如 LocalAppData。
 
 ## 开发说明
 
-- 后端遵循 ABP 分层架构，服务类继承自定义 `AppService` 基类
-- API 路由使用 `[Route("dapi/xxx")]` + HTTP Method 特性，不走 ABP 自动 API 控制器
-- 响应包装通过 `ApiResultFilter`（ActionFilter）和 `ApiResponseHandlerMiddleware` 实现
-- 对象映射使用 Mapperly（编译时源生成器），映射类位于各 Application 子目录
-- 文件上传存储在 `backend/src/AI.Image.HttpApi.Host/uploads/` 目录下
-- SQLite 数据库禁用了 EF Core 工作单元事务（兼容性优化）
+- 后端遵循 ABP 分层架构。
+- API 路由使用显式 Route 特性，不依赖 ABP 自动控制器。
+- 对象映射使用 Mapperly。
+- 图片上传使用 ImageSharp 生成缩略图。
+- 前端使用 Pinia 管理项目与图片状态。
+- 项目详情页统一使用选择集实现导出与对比入口。
+
+## 当前已知后续优化点
+
+- 增加专用健康检查接口替代当前业务接口轮询。
+- 将桌面版数据库、上传目录迁移到用户可写目录。
+- 完善大列表性能优化与键盘操作。
+- 增加自动更新、日志和异常采集。

@@ -59,9 +59,6 @@
       "createStartMenuShortcut": true,
       "shortcutName": "AI 图片筛选与评审工作台",
       "artifactName": "${productName}-Installer-${version}.${ext}",
-      "installerIcon": "icon.ico",
-      "uninstallerIcon": "icon.ico",
-      "installerHeaderIcon": "icon.ico",
       "deleteAppDataOnUninstall": false
     }
   },
