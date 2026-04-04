@@ -1,8 +1,6 @@
 using AI.Image.EntityFrameworkCore;
 using AI.Image.Filters;
 using AI.Image.Middlewares;
-using Medallion.Threading;
-using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
@@ -11,34 +9,31 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
-using Volo.Abp.DistributedLocking;
 using Volo.Abp.Modularity;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.Timing;
-using Volo.Abp.VirtualFileSystem;
 
 namespace AI.Image;
 
 [DependsOn(
-    typeof(HttpApiModule),
+	typeof(HttpApiModule),
 	typeof(ApplicationModule),
 	typeof(EntityFrameworkCoreModule),
-	typeof(AbpAutofacModule),//ÃÊªª ASP.NET Core ƒ¨»œµƒ“¿¿µ◊¢»Î»›∆˜£¨Ã·π©∏¸«ø¥Ûµƒ“¿¿µ◊¢»Îπ¶ƒ‹
-	typeof(AbpDistributedLockingModule),
 	typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpSwashbuckleModule)//”√”⁄ºØ≥… Swagger/OpenAPI µƒƒ£øÈ£¨À¸ª˘”⁄¡˜––µƒ Swashbuckle.AspNetCore ø‚
+	typeof(AbpAutofacModule),	//ÊõøÊç¢ ASP.NET Core ÈªòËÆ§ÁöÑ‰æùËµñÊ≥®ÂÖ•ÂÆπÂô®
+	typeof(AbpSwashbuckleModule)//ÈõÜÊàê Swagger/OpenAPI
 )]
 public class HttpApiHostModule : AbpModule
 {
-    public override void ConfigureServices(ServiceConfigurationContext context)
-    {
-        var configuration = context.Services.GetConfiguration();
-        var hostingEnvironment = context.Services.GetHostingEnvironment();
+	public override void ConfigureServices(ServiceConfigurationContext context)
+	{
+		var configuration = context.Services.GetConfiguration();
+		var hostingEnvironment = context.Services.GetHostingEnvironment();
 		ConfigureAutoApiControllers();
-        ConfigureDistributedLocking(context.Services);
-        ConfigureCors(context.Services, configuration);
-        ConfigureSwaggerServices(context.Services);
-		
+		ConfigureCors(context.Services, configuration);
+		ConfigureSwaggerServices(context.Services);
+		context.Services.AddHttpClient();
+
 		Configure<MvcOptions>(options =>
 		{
 			options.Filters.Add<ApiExceptionFilter>();
@@ -57,20 +52,18 @@ public class HttpApiHostModule : AbpModule
 		{
 			options.Kind = DateTimeKind.Local;
 		});
-
-		context.Services.AddHttpClient();
 	}
 
-    private void ConfigureAutoApiControllers()
-    {
-        Configure<AbpAspNetCoreMvcOptions>(options =>
-        {
-            options.ConventionalControllers.Create(typeof(ApplicationModule).Assembly);
-        });
-    }
+	private void ConfigureAutoApiControllers()
+	{
+		Configure<AbpAspNetCoreMvcOptions>(options =>
+		{
+			options.ConventionalControllers.Create(typeof(ApplicationModule).Assembly);
+		});
+	}
 
 	private static void ConfigureSwaggerServices(IServiceCollection services)
-    {
+	{
 		services.AddAbpSwaggerGen(options =>
 		{
 			options.SwaggerDoc("v1", new OpenApiInfo { Title = "Image API", Version = "v1", Description = "" });
@@ -80,51 +73,39 @@ public class HttpApiHostModule : AbpModule
 		});
 	}
 
-    private static void ConfigureDistributedLocking(IServiceCollection services)
-    {
-		services.AddSingleton<IDistributedLockProvider>(sp =>
+	private static void ConfigureCors(IServiceCollection services, IConfiguration configuration)
+	{
+		var allowedOrigins = configuration.GetSection("CorsOrigins").Get<string[]>() ?? [];
+		services.AddCors(options =>
 		{
-			var lockFileDirectory = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "distributed-locks"));
-			if (!lockFileDirectory.Exists)
+			options.AddDefaultPolicy(builder =>
 			{
-				lockFileDirectory.Create();
-			}
-			return new FileDistributedSynchronizationProvider(lockFileDirectory);
+				builder.WithOrigins(allowedOrigins)
+					.WithAbpExposedHeaders()
+					.SetIsOriginAllowedToAllowWildcardSubdomains()
+					.AllowAnyHeader()
+					.AllowAnyMethod()
+					.AllowCredentials();
+			});
 		});
 	}
 
-    private static void ConfigureCors(IServiceCollection services, IConfiguration configuration)
-    {
-		var allowedOrigins = configuration.GetSection("CorsOrigins").Get<string[]>() ?? [];
-		services.AddCors(options =>
-        {
-            options.AddDefaultPolicy(builder =>
-            {
-				builder.WithOrigins(allowedOrigins)
-                    .WithAbpExposedHeaders()
-                    .SetIsOriginAllowedToAllowWildcardSubdomains()
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials();
-            });
-        });
-    }
-
-    public override async Task OnApplicationInitializationAsync(ApplicationInitializationContext context)
-    {
+	public override async Task OnApplicationInitializationAsync(ApplicationInitializationContext context)
+	{
 		var app = context.GetApplicationBuilder();
-        var env = context.GetEnvironment();
-        if (env.IsDevelopment())
-        {
-            app.UseDeveloperExceptionPage();
-        }
+		var env = context.GetEnvironment();
+		if (env.IsDevelopment())
+		{
+			app.UseDeveloperExceptionPage();
+		}
 		app.UseAbpRequestLocalization();
 		app.UseApiResponseHandler();
 		app.UseCorrelationId();
-        app.UseRouting();
-        app.UseCors();
+		app.UseRouting();
+		app.UseCors();
+		app.UseStaticFiles(); // Êèê‰æõ wwwroot ‰∏ãÁöÑÈùôÊÄÅÊñá‰ª∂Ôºà‰∏ä‰º†ÁöÑÂõæÁâáÔºâ
 		app.UseUnitOfWork();
-        app.UseDynamicClaims();
+		app.UseDynamicClaims();
 		app.UseSwagger();
 		app.UseAbpSwaggerUI(options =>
 		{
@@ -133,6 +114,6 @@ public class HttpApiHostModule : AbpModule
 			options.DisplayRequestDuration();
 		});
 		app.UseAbpSerilogEnrichers();
-        app.UseConfiguredEndpoints();
-    }
+		app.UseConfiguredEndpoints();
+	}
 }
