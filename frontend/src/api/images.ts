@@ -65,6 +65,11 @@ export const imageApi = {
     request.delete(`/image/deleteByProject/${projectId}`),
 
   /** 获取静态资源完整 URL（走后端）*/
-  getFileUrl: (path?: string | null) =>
-    path ? `http://localhost:5008/${path}` : '',
+  getFileUrl: (path?: string | null) => normalizeFileUrl(path),
+}
+
+function normalizeFileUrl(path?: string | null) {
+  if (!path) return ''
+  if (/^https?:\/\//i.test(path)) return path
+  return `${import.meta.env.VITE_BACKEND_ORIGIN}/${path.replace(/^\/+/, '')}`
 }

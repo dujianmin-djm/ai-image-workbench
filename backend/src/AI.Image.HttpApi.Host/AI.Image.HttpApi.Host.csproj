@@ -22,10 +22,11 @@
   <ItemGroup>
     <None Remove="Image.db-shm" />
     <None Remove="Image.db-wal" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="Image.db" />
+    <!-- 确保 Image.db 被复制到输出目录 -->
+    <None Update="Image.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

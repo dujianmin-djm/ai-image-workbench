@@ -1,7 +1,17 @@
 {
   "folders": [
-    { "path": "backend", "name": "Backend (ABP)" },
-    { "path": "frontend", "name": "Frontend (Vue3)" }
+    {
+      "path": "backend",
+      "name": "Backend (ABP)"
+    },
+    {
+      "path": "frontend",
+      "name": "Frontend (Vue3)"
+    },
+    {
+      "path": "desktop",
+      "name": "Desktop (Electron)"
+    }
   ],
   "settings": {
     "files.exclude": {

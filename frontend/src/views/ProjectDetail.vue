@@ -132,12 +132,13 @@ function goCompare() {
 
 // 导出已选
 const exporting = ref(false)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 async function exportSelected() {
   const ids = Array.from(selectedForExport.value)
   if (!ids.length) return ElMessage.warning('请先选择要导出的图片')
   exporting.value = true
   try {
-    const res = await fetch('/dapi/image/export', {
+    const res = await fetch(`${API_BASE_URL}/image/export`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids }),
@@ -162,7 +163,7 @@ async function exportSelected() {
 async function exportAll() {
   exporting.value = true
   try {
-    const res = await fetch('/dapi/image/export', {
+    const res = await fetch(`${API_BASE_URL}/image/export`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectId: projectId.value }),
