@@ -54,15 +54,13 @@ ai-image-workbench/
 ├── DESIGN.md                 # 产品设计文档
 ├── AI_USAGE.md               # AI 使用说明
 ├── USER-MANUAL.md            # 用户操作手册
-├── start.bat                 # Web 开发态一键启动
-└── stop.bat                  # Web 开发态停止脚本
 ```
 
 ## 运行模式
 
 | 模式 | 适用场景 | 启动方式 |
 | --- | --- | --- |
-| Web 开发调试 | 代码开发、接口联调、问题排查 | 运行 start.bat 或分别启动 frontend 与 backend |
+| Web 开发调试 | 代码开发、接口联调、问题排查 | 分别启动 frontend 与 backend |
 | Electron 桌面版 | 演示、目录版测试、安装包交付 | 参考 [desktop/README.md](desktop/README.md) 构建与启动 |
 
 ## 快速开始
@@ -74,20 +72,6 @@ ai-image-workbench/
 - npm。
 
 ### 2. Web 开发调试
-
-直接双击根目录下的 start.bat，脚本会自动：
-
-1. 检查 Node.js 与 .NET SDK。
-2. 安装前端依赖。
-3. 还原后端依赖。
-4. 更新数据库。
-5. 启动后端服务。
-6. 启动前端开发服务器。
-7. 打开浏览器。
-
-停止服务可运行 stop.bat。
-
-也可以手动启动：
 
 ```powershell
 cd D:\作业\ai-image-workbench\backend
@@ -208,7 +192,7 @@ $env:VITE_BACKEND_ORIGIN = "http://127.0.0.1:5008"
 - 前端使用 Pinia 管理项目与图片状态。
 - 项目详情页统一使用选择集实现导出与对比入口。
 
-## 当前已知后续优化点
+## 后续可优化点
 
 - 增加专用健康检查接口替代当前业务接口轮询。
 - 将桌面版数据库、上传目录迁移到用户可写目录。
