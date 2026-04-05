@@ -63,6 +63,15 @@ ai-image-workbench/
 | Web 开发调试 | 代码开发、接口联调、问题排查 | 分别启动 frontend 与 backend |
 | Electron 桌面版 | 演示、目录版测试、安装包交付 | 参考 [desktop/README.md](desktop/README.md) 构建与启动 |
 
+## 示例图片
+
+<img width="3072" height="1822" alt="project2" src="https://github.com/user-attachments/assets/0aa7563e-3dbe-4695-9a37-2a1ea9673a6a" />
+<img width="3072" height="1824" alt="project3" src="https://github.com/user-attachments/assets/726392d7-fa3c-4ec6-8261-162a1eb97c10" />
+<img width="3072" height="1824" alt="project4" src="https://github.com/user-attachments/assets/11753a1a-11c0-4843-8762-714adf05a4d4" />
+<img width="3072" height="1822" alt="image-compare" src="https://github.com/user-attachments/assets/4d76edf4-b949-4b5a-ad43-4d38b6977732" />
+<img width="3072" height="1824" alt="image-detail" src="https://github.com/user-attachments/assets/58760366-81bd-4f42-ade4-e27420c40954" />
+<img width="1920" height="1080" alt="image-openapi" src="https://github.com/user-attachments/assets/26f144d3-32ff-4911-8936-b60c284017b0" />
+
 ## 快速开始
 
 ### 1. 开发环境要求
