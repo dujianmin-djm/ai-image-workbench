@@ -1,5 +1,6 @@
 using AI.Image.EntityFrameworkCore;
 using AI.Image.Filters;
+using AI.Image.HealthChecks;
 using AI.Image.Middlewares;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,7 @@ public class HttpApiHostModule : AbpModule
 		ConfigureCors(context.Services, configuration);
 		ConfigureSwaggerServices(context.Services);
 		context.Services.AddHttpClient();
+		context.Services.AddDbHealthChecks();
 
 		Configure<MvcOptions>(options =>
 		{

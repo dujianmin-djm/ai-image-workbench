@@ -6,11 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 
 namespace AI.Image.Books;
 
 [Route("dapi/book")]
+[RemoteService(IsMetadataEnabled = false)]
 public class BookAppService : AppService, IBookAppService
 {
     private readonly IRepository<Book, Guid> _repository;

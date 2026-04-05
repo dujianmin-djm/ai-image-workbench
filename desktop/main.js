@@ -20,8 +20,7 @@ const backendDir = isPackaged
 const frontendIndex = path.join(frontendDir, "index.html");
 const backendExe = path.join(backendDir, "AI.Image.HttpApi.Host.exe");
 
-const BACKEND_PORT = 5008;
-const BACKEND_URL = `http://127.0.0.1:${BACKEND_PORT}`;
+const BACKEND_URL = `http://127.0.0.1:5008`;
 
 // 启动后端
 function startBackend() {
@@ -69,7 +68,7 @@ function waitForBackend(retries = 30, interval = 1000) {
   return new Promise((resolve, reject) => {
     const check = (remaining) => {
       const req = http.get(
-        `${BACKEND_URL}/dapi/book/query?current=1&size=1`,
+        `${BACKEND_URL}/health-status`,
         (res) => {
           console.log("Backend check status:", res.statusCode);
 
