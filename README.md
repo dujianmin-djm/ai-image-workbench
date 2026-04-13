@@ -77,20 +77,20 @@ ai-image-workbench/
 ### 1. 开发环境要求
 
 - .NET 10 SDK。
-- Node.js 18 或更高版本。
+- Node.js 18+。
 - npm。
 
 ### 2. Web 开发调试
 
 ```powershell
-cd D:\作业\ai-image-workbench\backend
+cd ..\ai-image-workbench\backend
 dotnet restore src\AI.Image.HttpApi.Host\AI.Image.HttpApi.Host.csproj
 dotnet ef database update --project src\AI.Image.EntityFrameworkCore\AI.Image.EntityFrameworkCore.csproj --startup-project src\AI.Image.HttpApi.Host\AI.Image.HttpApi.Host.csproj
 dotnet run --project src\AI.Image.HttpApi.Host --urls http://localhost:5008
 ```
 
 ```powershell
-cd D:\作业\ai-image-workbench\frontend
+cd ..\ai-image-workbench\frontend
 npm install
 npm run dev
 ```
@@ -152,7 +152,15 @@ $env:VITE_BACKEND_ORIGIN = "http://127.0.0.1:5008"
 
 ## 核心 API 概览
 
-所有接口统一以 /dapi 为前缀。
+所有接口统一以 /dapi 为前缀。接口统一返回格式：
+
+```json
+{
+  "code": "200",  // 200 表示请求成功
+  "data": `T`,    // T 为具体返回的数据结构
+  "message": ""
+}
+```
 
 ### 项目接口
 
@@ -203,7 +211,6 @@ $env:VITE_BACKEND_ORIGIN = "http://127.0.0.1:5008"
 
 ## 后续可优化点
 
-- 增加专用健康检查接口替代当前业务接口轮询。
 - 将桌面版数据库、上传目录迁移到用户可写目录。
 - 完善大列表性能优化与键盘操作。
 - 增加自动更新、日志和异常采集。
